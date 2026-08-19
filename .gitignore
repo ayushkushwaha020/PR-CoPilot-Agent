@@ -1,0 +1,39 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Local data
+chromadb_data/
+data/
+logs/
+*.db
+*.sqlite
+*.sqlite3
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime / temporary
+*.log
+*.tmp
+*.zip

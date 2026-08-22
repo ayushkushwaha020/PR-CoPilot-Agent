@@ -218,3 +218,122 @@ def test_recent_reviews_limit(tmp_path):
     assert len(reviews) == 2
     assert reviews[0]["pr_number"] == 5
     assert reviews[1]["pr_number"] == 4
+
+
+def test_process_pull_request_happy_path(monkeypatch):
+    import main
+
+    diff = {
+        "files": [
+            {
+                "filename": "app.py",
+                "patch": """@@ -1,1 +1,2 @@
++new_line
+""",
+            }
+        ]
+    }
+
+    context = {
+        "status": "success",
+        "chunks": [],
+    }
+
+    results = {
+        "security": [
+            {
+                "agent": "security",
+                "file": "app.py",
+                "line": 1,
+                "severity": "high",
+                "message": "Unsafe input",
+                "fix": "Validate input",
+            }
+        ],
+        "performance": [],
+        "architecture": [],
+    }
+
+    posted = {
+        "review_id": 123,
+        "inline_comments": 1,
+        "findings": 1,
+        "event": "COMMENT",
+    }
+
+    class FakeIndexer:
+        def index_repository(self, repo_name, branch, repo_url=None):
+            assert repo_name == "owner/repo"
+            assert branch == "main"
+            assert repo_url == "https://github.com/owner/repo.git"
+
+        def get_context(self, repo_name, query, top_k):
+            assert repo_name == "owner/repo"
+            assert top_k == main.config.RAG_TOP_K
+            return context
+
+    class FakeEngine:
+        def orchestrate_review(self, received_diff, received_context, metadata):
+            assert received_diff == diff
+            assert received_context == context
+            assert metadata["number"] == 1
+            assert metadata["title"] == "Test PR"
+            assert metadata["repo"] == "owner/repo"
+            assert metadata["head_sha"] == "abc123"
+            return results
+
+    class FakeGitHub:
+        def fetch_pr_diff(self, repo_name, pr_number):
+            assert repo_name == "owner/repo"
+            assert pr_number == 1
+            return diff
+
+        def post_review(
+            self,
+            repo_name,
+            pr_number,
+            review_results,
+            event,
+            max_inline_comments,
+        ):
+            assert repo_name == "owner/repo"
+            assert pr_number == 1
+            assert review_results == results
+            assert event == "COMMENT"
+            assert max_inline_comments == main.config.MAX_INLINE_COMMENTS
+            return posted
+
+    class FakeDB:
+        def create_review(
+            self,
+            delivery_id,
+            repo_name,
+            pr_number,
+            pr_title,
+            commit_sha,
+            status,
+            findings,
+        ):
+            assert delivery_id == "delivery-1"
+            assert repo_name == "owner/repo"
+            assert pr_number == 1
+            assert pr_title == "Test PR"
+            assert commit_sha == "abc123"
+            assert status == "issues_found"
+            assert findings == results
+            return 1
+
+    monkeypatch.setattr(main, "github_client", FakeGitHub())
+    monkeypatch.setattr(main, "db", FakeDB())
+    monkeypatch.setattr(main, "get_indexer", lambda: FakeIndexer())
+    monkeypatch.setattr(main, "get_review_engine", lambda: FakeEngine())
+
+    main.process_pull_request(
+        "delivery-1",
+        "owner/repo",
+        1,
+        "Test PR",
+        "https://github.com/owner/repo.git",
+        "main",
+        "abc123",
+    )

@@ -1,10 +1,8 @@
 # PR-CoPilot Agent
 
-## Project Links
+## Project Link
 
-- **GitHub Repository:** https://github.com/ayushkushwaha020/PR-CoPilot-Agent
 - **Hosted PR-CoPilot:** https://ayu-pr-pbl.onrender.com/ui/
-
 
 Architecture preserved from the academic synopsis:
 

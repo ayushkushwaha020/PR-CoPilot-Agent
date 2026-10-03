@@ -1,5 +1,11 @@
 # PR-CoPilot Agent
 
+## Project Links
+
+- **GitHub Repository:** https://github.com/ayushkushwaha020/PR-CoPilot-Agent
+- **Hosted PR-CoPilot:** https://ayu-pr-pbl.onrender.com/ui/
+
+
 Architecture preserved from the academic synopsis:
 
 **GitHub Webhook → FastAPI → PyGithub → LlamaIndex chunking + ChromaDB RAG → parallel Security / Quality & Performance / Architecture agents → LangChain + Gemini → structured findings → GitHub inline review → SQLite → Streamlit**
